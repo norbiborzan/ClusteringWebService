@@ -30,6 +30,17 @@ def uploadFiles(fileName, operation):
     #     ####################
     #     # True for now
     return fileName + " " + operation
+    
+@app.get('/shutdown')
+def shutdown():
+    shutdown_server()
+    return 'Server shutting down...'
+
+def shutdown_server():
+    func = request.environ.get('werkzeug.server.shutdown')
+    if func is None:
+        raise RuntimeError('Not running with the Werkzeug Server')
+    func()
 
 if (__name__ == "__main__"):
      app.run(port = 5000)
