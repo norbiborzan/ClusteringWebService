@@ -119,13 +119,19 @@ def uploadFiles(algorithm, operation):
         # set the file path
         file_path = os.path.join(app.config['UPLOAD_FOLDER'], uploaded_file.filename)
         # save the file
+        if os.path.exists(file_path):
+            os.remove(file_path)
+        
+        if os.path.exists(os.path.join(app.config['UPLOAD_FOLDER'], "pred.csv")):
+            os.remove(os.path.join(app.config['UPLOAD_FOLDER'], "pred.csv"))
+            
         uploaded_file.save(file_path)
 
         if(algorithm == "knn"):
             pred_path = knn(file_path, operation)
-        elif(operation == 'svm'):
+        elif(algorithm == 'svm'):
             pred_path = svm(file_path, operation)
-        elif(operation == 'gnb'):
+        elif(algorithm == 'gnb'):
             pred_path = gnb(file_path, operation) 
     
     return send_file(pred_path, as_attachment=True, download_name='pred.csv')
