@@ -14,6 +14,8 @@ app.config["DEBUG"] = True
 
 # Upload folder
 UPLOAD_FOLDER = 'static\\files'
+PRED_PATH = 'static\\files\\pred.csv'
+
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 def predict(filepath, algorithm, operation):
@@ -51,16 +53,8 @@ def predict(filepath, algorithm, operation):
         # Predict
         y_pred = gnb.fit(X, y).predict(X)
 
-
-    # Write prediction in new CSV file
-    predFilePath = UPLOAD_FOLDER + "\\pred.csv"
-    f = open(predFilePath, 'a')
-    #f.write('PredictedVal' + '\n')
-    for val in y_pred:
-        f.write(str(val) + '\n')
-    f.close()
-
-    return predFilePath 
+    dataset.insert(0, "Predicted Class", y_pred, True)
+    dataset.to_csv(PRED_PATH, index=False)
 
 # Get the uploaded files
 @app.route("/<algorithm>/<operation>", methods=['POST'])
@@ -82,9 +76,9 @@ def uploadFiles(algorithm, operation):
             
         uploaded_file.save(file_path)
 
-        pred_path = predict(file_path, algorithm, operation) 
+        predict(file_path, algorithm, operation) 
     
-    return send_file(pred_path, as_attachment=True, download_name='pred.csv')
+    return send_file(PRED_PATH, as_attachment=True, download_name='pred.csv')
 
 # Shutdown the server 
 @app.get('/shutdown')
