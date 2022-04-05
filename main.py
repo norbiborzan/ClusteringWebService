@@ -15,6 +15,7 @@ app.config["DEBUG"] = True
 # Upload folder
 UPLOAD_FOLDER = 'static\\files'
 PRED_PATH = 'static\\files\\pred.csv'
+TEST_PATH = 'static\\files\\test.csv'
 
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
@@ -29,10 +30,12 @@ def predict(filepath, algorithm, operation):
     elif(operation == 'dropnacols'):
         dataset = dataset.dropna(axis='columns')
     elif(operation == 'replacenan'):
-        dataset = dataset.mean()
+        dataset = dataset.ffill().bfill()
+        #dataset.to_csv(TEST_PATH, index=False)
 
     # Choose columns
-    X = dataset.iloc[:, [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19]].values
+    #X = dataset.iloc[:, [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19]].values
+    X = dataset.iloc[:, dataset.columns != 'True Class'].values
     y = dataset.iloc[:, 0].values
 
     if(algorithm == 'knn'):
