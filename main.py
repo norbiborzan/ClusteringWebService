@@ -1,8 +1,8 @@
 from flask import Flask, request, send_file
+import pandas as pd
 import csv
 import os
 from os.path import join, dirname, realpath
-import pandas as pd
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.svm import SVC
 from sklearn.naive_bayes import GaussianNB
@@ -36,48 +36,64 @@ def predict(filepath, algorithm, operation):
     y = dataset.iloc[:, 0].values
 
     if(algorithm == 'knn'):
-        # Fitting classifier to the Training set   
+        # Fitting classifier to the dataset   
         classifier = KNeighborsClassifier(n_neighbors=2)
         classifier.fit(X, y)
         # Predict
         y_pred = classifier.predict(X)
     elif(algorithm == 'svm'):
-        # Fitting classifier to the Training set   
+        # Fitting classifier to the dataset   
         classifier = SVC(kernel = 'rbf', C = 10.0, gamma = 1.0)
         classifier.fit(X, y)
         # Predict
         y_pred = classifier.predict(X)
     elif(algorithm == 'gnb'):
-        # Fitting classifier to the Training set   
+        # Fitting classifier to the dataset   
         gnb = GaussianNB()
         # Predict
         y_pred = gnb.fit(X, y).predict(X)
-
-    dataset.insert(0, "Predicted Class", y_pred, True)
-    dataset.to_csv(PRED_PATH, index=False)
+    elif(algorithm == 'compare'):
+        #KNN
+        classifier = KNeighborsClassifier(n_neighbors=2)
+        classifier.fit(X, y)
+        y_predKNN = classifier.predict(X)
+        #SVM
+        classifier = SVC(kernel = 'rbf', C = 10.0, gamma = 1.0)
+        classifier.fit(X, y)
+        y_predSVM = classifier.predict(X)
+        #GNB
+        gnb = GaussianNB()
+        y_predGNB = gnb.fit(X, y).predict(X)
+    
+    if(algorithm == 'compare'):
+        dataset.insert(0, "KNN Predicted Class", y_predKNN, True)
+        dataset.insert(1, "SVM Predicted Class", y_predSVM, True)
+        dataset.insert(2, "GNB Predicted Class", y_predGNB, True)
+        dataset.to_csv(PRED_PATH, index=False)
+    else:
+        dataset.insert(0, "Predicted Class", y_pred, True)
+        dataset.to_csv(PRED_PATH, index=False)
 
 # Get the uploaded files
 @app.route("/<algorithm>/<operation>", methods=['POST'])
 def uploadFiles(algorithm, operation):
 
-    # get the uploaded file
+    # Det the uploaded file
     uploaded_file = request.files['content']
     if uploaded_file.filename != '':
-
-        # set the file path
+        # Set the file path
         file_path = os.path.join(app.config['UPLOAD_FOLDER'], uploaded_file.filename)
-        
-        # save the file
+        # Remove the dataset file if it exists
         if os.path.exists(file_path):
             os.remove(file_path)
-        
+        # Remove the predicted file if it exists
         if os.path.exists(os.path.join(app.config['UPLOAD_FOLDER'], "pred.csv")):
             os.remove(os.path.join(app.config['UPLOAD_FOLDER'], "pred.csv"))
-            
+        # Save the file
         uploaded_file.save(file_path)
-
+        # Run the prediction algorithms
         predict(file_path, algorithm, operation) 
-    
+    # Return predicted file to client
     return send_file(PRED_PATH, as_attachment=True, download_name='pred.csv')
 
 # Shutdown the server 
