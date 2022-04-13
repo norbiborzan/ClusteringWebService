@@ -1,8 +1,8 @@
 from flask import Flask, request, send_file
+import pandas as pd
 import csv
 import os
 from os.path import join, dirname, realpath
-import pandas as pd
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.svm import SVC
 from sklearn.naive_bayes import GaussianNB
@@ -14,9 +14,12 @@ app.config["DEBUG"] = True
 
 # Upload folder
 UPLOAD_FOLDER = 'static\\files'
+PRED_PATH = 'static\\files\\pred.csv'
+TEST_PATH = 'static\\files\\test.csv'
+
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
-def knn(filepath, operation):
+def predict(filepath, algorithm, operation):
 
     # Importing the dataset
     dataset = pd.read_csv(filepath)
@@ -27,124 +30,74 @@ def knn(filepath, operation):
     elif(operation == 'dropnacols'):
         dataset = dataset.dropna(axis='columns')
     elif(operation == 'replacenan'):
-        dataset = dataset.mean()
+        dataset = dataset.ffill().bfill()
+        #dataset.to_csv(TEST_PATH, index=False)
 
     # Choose columns
-    X = dataset.iloc[:, [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19]].values
+    #X = dataset.iloc[:, [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19]].values
+    X = dataset.iloc[:, dataset.columns != 'True Class'].values
     y = dataset.iloc[:, 0].values
 
-    # Fitting classifier to the Training set   
-    classifier = KNeighborsClassifier(n_neighbors=2)
-    classifier.fit(X, y)
-
-    # Predict
-    y_pred = classifier.predict(X)
-
-    # Write prediction in new CSV file
-    predFilePath = UPLOAD_FOLDER + "\\pred.csv"
-    f = open(predFilePath, 'a')
-    #f.write('PredictedVal' + '\n')
-    for val in y_pred:
-        f.write(str(val) + '\n')
-    f.close()
-
-    return predFilePath 
-
-def svm(filepath, operation):
-
-    # Importing the dataset
-    dataset = pd.read_csv(filepath)
-
-    # Set pre-processign type
-    if(operation == 'dropnarows'):
-        dataset = dataset.dropna()
-    elif(operation == 'dropnacols'):
-        dataset = dataset.dropna(axis='columns')
-    elif(operation == 'replacenan'):
-        dataset = dataset.mean()
-
-    # Choose columns
-    X = dataset.iloc[:, [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19]].values
-    y = dataset.iloc[:, 0].values
-
-    # Fitting classifier to the Training set   
-    classifier = SVC(kernel = 'rbf', C = 10.0, gamma = 1.0)
-    classifier.fit(X, y)
-
-    # Predict
-    y_pred = classifier.predict(X)
-
-    # Write prediction in new CSV file
-    predFilePath = UPLOAD_FOLDER + "\\pred.csv"
-    f = open(predFilePath, 'a')
-    #f.write('PredictedVal' + '\n')
-    for val in y_pred:
-        f.write(str(val) + '\n')
-    f.close()
-
-    return predFilePath 
-
-def gnb(filepath, operation):
-
-    # Importing the dataset
-    dataset = pd.read_csv(filepath)
-
-    # Set pre-processign type
-    if(operation == 'dropnarows'):
-        dataset = dataset.dropna()
-    elif(operation == 'dropnacols'):
-        dataset = dataset.dropna(axis='columns')
-    elif(operation == 'replacenan'):
-        dataset = dataset.mean()
-
-    # Choose columns
-    X = dataset.iloc[:, [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19]].values
-    y = dataset.iloc[:, 0].values
-
-    # Fitting classifier to the Training set   
-    gnb = GaussianNB()
-
-    # Predict
-    y_pred = gnb.fit(X, y).predict(X)
-
-    # Write prediction in new CSV file
-    predFilePath = UPLOAD_FOLDER + "\\pred.csv"
-    f = open(predFilePath, 'a')
-    #f.write('PredictedVal' + '\n')
-    for val in y_pred:
-        f.write(str(val) + '\n')
-    f.close()
-
-    return predFilePath 
+    if(algorithm == 'knn'):
+        # Fitting classifier to the dataset   
+        classifier = KNeighborsClassifier(n_neighbors=2)
+        classifier.fit(X, y)
+        # Predict
+        y_pred = classifier.predict(X)
+    elif(algorithm == 'svm'):
+        # Fitting classifier to the dataset   
+        classifier = SVC(kernel = 'rbf', C = 10.0, gamma = 1.0)
+        classifier.fit(X, y)
+        # Predict
+        y_pred = classifier.predict(X)
+    elif(algorithm == 'gnb'):
+        # Fitting classifier to the dataset   
+        gnb = GaussianNB()
+        # Predict
+        y_pred = gnb.fit(X, y).predict(X)
+    elif(algorithm == 'compare'):
+        #KNN
+        classifier = KNeighborsClassifier(n_neighbors=2)
+        classifier.fit(X, y)
+        y_predKNN = classifier.predict(X)
+        #SVM
+        classifier = SVC(kernel = 'rbf', C = 10.0, gamma = 1.0)
+        classifier.fit(X, y)
+        y_predSVM = classifier.predict(X)
+        #GNB
+        gnb = GaussianNB()
+        y_predGNB = gnb.fit(X, y).predict(X)
+    
+    if(algorithm == 'compare'):
+        dataset.insert(0, "KNN Predicted Class", y_predKNN, True)
+        dataset.insert(1, "SVM Predicted Class", y_predSVM, True)
+        dataset.insert(2, "GNB Predicted Class", y_predGNB, True)
+        dataset.to_csv(PRED_PATH, index=False)
+    else:
+        dataset.insert(0, "Predicted Class", y_pred, True)
+        dataset.to_csv(PRED_PATH, index=False)
 
 # Get the uploaded files
 @app.route("/<algorithm>/<operation>", methods=['POST'])
 def uploadFiles(algorithm, operation):
 
-    # get the uploaded file
+    # Det the uploaded file
     uploaded_file = request.files['content']
     if uploaded_file.filename != '':
-
-        # set the file path
+        # Set the file path
         file_path = os.path.join(app.config['UPLOAD_FOLDER'], uploaded_file.filename)
-        
-        # save the file
+        # Remove the dataset file if it exists
         if os.path.exists(file_path):
             os.remove(file_path)
-        
+        # Remove the predicted file if it exists
         if os.path.exists(os.path.join(app.config['UPLOAD_FOLDER'], "pred.csv")):
             os.remove(os.path.join(app.config['UPLOAD_FOLDER'], "pred.csv"))
-            
+        # Save the file
         uploaded_file.save(file_path)
-
-        if(algorithm == "knn"):
-            pred_path = knn(file_path, operation)
-        elif(algorithm == 'svm'):
-            pred_path = svm(file_path, operation)
-        elif(algorithm == 'gnb'):
-            pred_path = gnb(file_path, operation) 
-    
-    return send_file(pred_path, as_attachment=True, download_name='pred.csv')
+        # Run the prediction algorithms
+        predict(file_path, algorithm, operation) 
+    # Return predicted file to client
+    return send_file(PRED_PATH, as_attachment=True, download_name='pred.csv')
 
 # Shutdown the server 
 @app.get('/shutdown')

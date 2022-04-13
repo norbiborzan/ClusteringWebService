@@ -19,7 +19,7 @@ TEST_PATH = 'static\\files\\test.csv'
 
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
-def predict(filepath, algorithm, operation):
+def predict(filepath, algorithm, operation, column):
 
     # Importing the dataset
     dataset = pd.read_csv(filepath)
@@ -36,11 +36,13 @@ def predict(filepath, algorithm, operation):
     # Choose columns
     #X = dataset.iloc[:, [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19]].values
     X = dataset.iloc[:, dataset.columns != 'True Class'].values
-    y = dataset.iloc[:, 0].values
+    if(column != "none"):
+       X = dataset.iloc[:, dataset.columns != column].values
+    y = dataset.loc[:, dataset.columns == 'True Class'].values
 
     if(algorithm == 'knn'):
         # Fitting classifier to the dataset   
-        classifier = KNeighborsClassifier(n_neighbors=2)
+        classifier = KNeighborsClassifier(n_neighbors=2 )
         classifier.fit(X, y)
         # Predict
         y_pred = classifier.predict(X)
@@ -78,8 +80,9 @@ def predict(filepath, algorithm, operation):
         dataset.to_csv(PRED_PATH, index=False)
 
 # Get the uploaded files
-@app.route("/<algorithm>/<operation>", methods=['POST'])
-def uploadFiles(algorithm, operation):
+@app.route("/<algorithm>/<operation>/<column>", methods=['POST'])
+#@app.route("/<algorithm>/<operation>", methods=['POST'])
+def uploadFiles(algorithm, operation, column):
 
     # Det the uploaded file
     uploaded_file = request.files['content']
@@ -95,7 +98,7 @@ def uploadFiles(algorithm, operation):
         # Save the file
         uploaded_file.save(file_path)
         # Run the prediction algorithms
-        predict(file_path, algorithm, operation) 
+        predict(file_path, algorithm, operation, column) 
     # Return predicted file to client
     return send_file(PRED_PATH, as_attachment=True, download_name='pred.csv')
 
