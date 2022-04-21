@@ -3,6 +3,7 @@ import pandas as pd
 import csv
 import os
 from os.path import join, dirname, realpath
+from pyparsing import col
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.svm import SVC
 from sklearn.naive_bayes import GaussianNB
@@ -24,6 +25,10 @@ def predict(filepath, algorithm, operation, column):
     # Importing the dataset
     dataset = pd.read_csv(filepath)
 
+    if(column != 'none'):
+       #x = dataset.loc[:, dataset.columns != column].values
+       dataset.drop(column, inplace = True, axis = 1)
+
     # Set pre-processign type
     if(operation == 'dropnarows'):
         dataset = dataset.dropna()
@@ -34,41 +39,40 @@ def predict(filepath, algorithm, operation, column):
         #dataset.to_csv(TEST_PATH, index=False)
 
     # Choose columns
-    #X = dataset.iloc[:, [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19]].values
-    X = dataset.iloc[:, dataset.columns != 'True Class'].values
-    if(column != "none"):
-       X = dataset.iloc[:, dataset.columns != column].values
-    y = dataset.loc[:, dataset.columns == 'True Class'].values
+    #x = dataset.iloc[:, [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19]].values
+    x = dataset.loc[:, dataset.columns != 'True Class'].values
+    #y = dataset.loc[:, dataset.columns == 'True Class'].values
+    y = dataset.iloc[:, 0].values
 
     if(algorithm == 'knn'):
         # Fitting classifier to the dataset   
-        classifier = KNeighborsClassifier(n_neighbors=2 )
-        classifier.fit(X, y)
+        classifier = KNeighborsClassifier(n_neighbors = 2)
+        classifier.fit(x, y)
         # Predict
-        y_pred = classifier.predict(X)
+        y_pred = classifier.predict(x)
     elif(algorithm == 'svm'):
         # Fitting classifier to the dataset   
         classifier = SVC(kernel = 'rbf', C = 10.0, gamma = 1.0)
-        classifier.fit(X, y)
+        classifier.fit(x, y)
         # Predict
-        y_pred = classifier.predict(X)
+        y_pred = classifier.predict(x)
     elif(algorithm == 'gnb'):
         # Fitting classifier to the dataset   
         gnb = GaussianNB()
         # Predict
-        y_pred = gnb.fit(X, y).predict(X)
+        y_pred = gnb.fit(x, y).predict(x)
     elif(algorithm == 'compare'):
         #KNN
-        classifier = KNeighborsClassifier(n_neighbors=2)
-        classifier.fit(X, y)
-        y_predKNN = classifier.predict(X)
+        classifier = KNeighborsClassifier(n_neighbors = 2)
+        classifier.fit(x, y)
+        y_predKNN = classifier.predict(x)
         #SVM
         classifier = SVC(kernel = 'rbf', C = 10.0, gamma = 1.0)
-        classifier.fit(X, y)
-        y_predSVM = classifier.predict(X)
+        classifier.fit(x, y)
+        y_predSVM = classifier.predict(x)
         #GNB
         gnb = GaussianNB()
-        y_predGNB = gnb.fit(X, y).predict(X)
+        y_predGNB = gnb.fit(x, y).predict(x)
     
     if(algorithm == 'compare'):
         dataset.insert(0, "KNN Predicted Class", y_predKNN, True)
