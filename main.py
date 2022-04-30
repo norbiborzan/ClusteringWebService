@@ -25,6 +25,9 @@ def predict(filepath, algorithm, operation, column):
     # Importing the dataset
     dataset = pd.read_csv(filepath)
 
+    if(column != 'none'):
+       dataset.drop(column, inplace = True, axis = 1)
+
     # Set pre-processign type
     if(operation == 'dropnarows'):
         dataset = dataset.dropna()
@@ -33,10 +36,6 @@ def predict(filepath, algorithm, operation, column):
     elif(operation == 'replacenan'):
         dataset = dataset.ffill().bfill()
         #dataset.to_csv(TEST_PATH, index=False)
-
-    if(column != 'none'):
-       #x = dataset.loc[:, dataset.columns != column].values
-       dataset.drop(column, inplace = True, axis = 1)
 
     # Choose columns
     #x = dataset.iloc[:, [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19]].values
@@ -85,7 +84,6 @@ def predict(filepath, algorithm, operation, column):
 
 # Get the uploaded files
 @app.route("/<algorithm>/<operation>/<column>", methods=['POST'])
-#@app.route("/<algorithm>/<operation>", methods=['POST'])
 def uploadFiles(algorithm, operation, column):
 
     # Det the uploaded file
