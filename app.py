@@ -107,7 +107,7 @@ def uploadFiles(algorithm, operation, column):
 @app.get('/shutdown')
 def shutdown():
     shutdown_server()
-    return 'Server shutting down...'
+    return 'Server shutting down'
 
 def shutdown_server():
     func = request.environ.get('werkzeug.server.shutdown')
@@ -117,5 +117,3 @@ def shutdown_server():
 
 if (__name__ == "__main__"):
     app.run(port = 5000)
-# if __name__ == "__main__":
-#     app.run(debug=True)
