@@ -2,7 +2,6 @@ from flask import Flask, request, send_file
 import pandas as pd
 import os
 from os.path import join, dirname, realpath
-from pyparsing import col
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.svm import SVC
 from sklearn.naive_bayes import GaussianNB
@@ -37,9 +36,7 @@ def predict(filepath, algorithm, operation, column):
         #dataset.to_csv(TEST_PATH, index=False)
 
     # Choose columns
-    #x = dataset.iloc[:, [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19]].values
     x = dataset.loc[:, dataset.columns != 'True Class'].values
-    #y = dataset.loc[:, dataset.columns == 'True Class'].values
     y = dataset.iloc[:, 0].values
 
     if(algorithm == 'knn'):
@@ -117,5 +114,3 @@ def shutdown_server():
 
 if (__name__ == "__main__"):
     app.run(port = 5000)
-# if __name__ == "__main__":
-#     app.run(debug=True)
