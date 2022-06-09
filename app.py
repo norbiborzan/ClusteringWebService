@@ -113,8 +113,4 @@ def shutdown_server():
     func()
 
 if (__name__ == "__main__"):
-<<<<<<< HEAD
     app.run(port = 5000)
-=======
-    app.run(port = 5000)
->>>>>>> 9c156c5a28d0c851b6096df81740058260a5f7ad
