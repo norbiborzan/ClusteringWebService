@@ -78,7 +78,7 @@ def predict(filepath, algorithm, operation, column):
         dataset.insert(0, "Predicted Class", y_pred, True)
         dataset.to_csv(PRED_PATH, index=False)
 
-# Get the uploaded files
+# Get the uploaded file and run the predict() method on it
 @app.route("/<algorithm>/<operation>/<column>", methods=['POST'])
 def uploadFiles(algorithm, operation, column):
 
